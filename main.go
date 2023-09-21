@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
@@ -11,10 +10,11 @@ import (
 )
 
 type treeNode struct {
-	TreeNodeId   int
-	TreeNodeName string
-	FTreeNodeId  string
-	ChildNodes   []treeNode
+	TreeNodeId   int        `json:"id"`
+	TreeNodeName string     `json:"title"`
+	FTreeNodeId  string     `json:"f_tree_node_id"`
+	HasChild     bool       `json:"hasChild"`
+	ChildNodes   []treeNode `json:"children"`
 }
 
 const (
@@ -52,7 +52,6 @@ func main() {
 	})
 	r.GET("/getnode", func(c *gin.Context) {
 		nodes := initTree(db)
-		fmt.Println(nodes)
 		c.JSON(http.StatusOK, gin.H{
 			"status": "200",
 			"nodes":  nodes,
@@ -79,6 +78,7 @@ func Core() gin.HandlerFunc {
 	}
 }
 
+// 链接数据库
 func initMysql() *sql.DB {
 	// [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
 	dataSourceName := USERNAME + ":" + PASSWORD + "@" + PROTOCOL + "(" + IP + ":" + PORT + ")/" + DBNAME
@@ -92,6 +92,8 @@ func initMysql() *sql.DB {
 	db.SetMaxIdleConns(MAXIDLECONNS)
 	return db
 }
+
+// 获取业务树
 func initTree(db *sql.DB) []treeNode {
 	var nodes []treeNode
 	rows, err := db.Query("select * from tree where fTreeNodeId=\"\"")
@@ -117,9 +119,10 @@ func initTree(db *sql.DB) []treeNode {
 	return nodes
 }
 
+// 递归获取子树
 func getChildNodes(nodes []treeNode, db *sql.DB) {
-	len := len(nodes)
-	for i := 0; i < len; i++ {
+	length := len(nodes)
+	for i := 0; i < length; i++ {
 		rows, err := db.Query("select * from tree where fTreeNodeId=?", nodes[i].TreeNodeId)
 		if err != nil {
 			log.Fatal(err)
@@ -139,9 +142,14 @@ func getChildNodes(nodes []treeNode, db *sql.DB) {
 				FTreeNodeId:  fTreeNodeId,
 			})
 		}
+		if len(nodes[i].ChildNodes) > 0 {
+			nodes[i].HasChild = true
+		}
 		getChildNodes(nodes[i].ChildNodes, db)
 	}
 }
+
+// 增加一个应用
 func addNode(db *sql.DB, node *treeNode) {
 	_, err := db.Exec("insert into tree(treeNodeId,treeNodeName,fTreeNodeId) values(?,?,?);",
 		node.TreeNodeId, node.TreeNodeName, node.FTreeNodeId)
