@@ -36,12 +36,10 @@ func main() {
 	initTree(db)
 	r := gin.Default()
 	r.Use(Core())
-	r.GET("/addnode", func(c *gin.Context) {
-		node := treeNode{
-			TreeNodeId:   2222,
-			TreeNodeName: "test",
-			FTreeNodeId:  "",
-		}
+	r.POST("/addnode", func(c *gin.Context) {
+		node := treeNode{}
+		node.TreeNodeName = c.PostForm("title")
+		node.FTreeNodeId = c.PostForm("f_tree_node_id")
 		addNode(db, &node)
 		c.JSON(http.StatusOK, gin.H{
 			"status":       "200",
