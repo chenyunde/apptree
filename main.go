@@ -22,7 +22,7 @@ const (
 	USERNAME        = "root"
 	PASSWORD        = "MyNewPass4!"
 	PROTOCOL        = "tcp"
-	IP              = "117.50.189.44"
+	IP              = "117.50.197.217"
 	PORT            = "3306"
 	DBNAME          = "tree"
 	CONNMAXLIFETIME = time.Minute * 3
